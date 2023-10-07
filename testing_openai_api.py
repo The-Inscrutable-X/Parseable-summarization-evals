@@ -2,17 +2,45 @@ import os
 import openai
 import requests
 import nltk
-nltk.download('punkt')
 import json
+
+nltk.download('punkt')
+
+# Setup environment variables.
+from dotenv import load_dotenv
+load_dotenv()
 key = os.getenv("OPENAI_API_KEY")
 openai.api_key = key
 
-def parseSentences(file, strip_newlines = True) -> list[str]:
+def parseSentences(file, strip_newlines=True) -> list[str]:
+    """
+    Parse the sentences from a file.
+
+    Args:
+        file (str): The path to the file.
+        strip_newlines (bool, optional): Whether to strip newlines from the file contents. Defaults to True.
+
+    Returns:
+        list[str]: The list of parsed sentences.
+    """
     with open(file, "r") as f:
-        contents =  f.read().replace("\n", " ")
+        contents = f.read().replace("\n", " ")
     return nltk.sent_tokenize(contents)
 
-
+def textual_inversion(query, sentences, threshold) -> list[str]:
+    """
+    Use textual inversion via embeddings to find which sentences are relevant to your query, return all sentences above a specified threshold.
+    ENSURE THIS IS CORRECT.
+    """
+    embeddings = openai.Embed(embedding_model="ada")
+    query_embedding = embeddings(query)
+    relevant_sentences = []
+    for sentence in sentences:
+        sentence_embedding = embeddings(sentence)
+        similarity = query_embedding.cosine_similarity(sentence_embedding)
+        if similarity > threshold:
+            relevant_sentences.append(sentence)
+    return relevant_sentences
 
 def make_completion(messages, model=None, url=None, verbose=False):
     """
